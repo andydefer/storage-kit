@@ -11,7 +11,6 @@
     ],
     "require": {
         "php": ">=8.1",
-        "andydefer/domain-structures": "^1.21",
         "andydefer/php-jsonl": "^0.7.0",
         "phpfastcache/phpfastcache": "^9.2"
     },
