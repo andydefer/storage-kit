@@ -1,65 +1,63 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AndyDefer\StorageKit\Contracts\Storage;
 
 use AndyDefer\PhpJsonl\JsonlService;
 use AndyDefer\StorageKit\Records\JsonlStorageStatsRecord;
 
 /**
- * Interface pour JsonlStorage avec support TTL, batch et statistiques
+ * Extended storage interface for JSONL-based persistence.
+ *
+ * Provides state management, TTL support, and expiration cleanup.
  */
 interface JsonlStorageInterface extends StorageInterface
 {
     /**
-     * Sauvegarde l'état complet d'une structure avec contexte
+     * Persists an application state with context support.
      *
-     * @param  string  $key  Clé d'identification
-     * @param  array  $state  État à sauvegarder
-     * @param  string|null  $context  Contexte (optionnel)
+     * @param  string  $key  The storage key
+     * @param  array<string, mixed>  $state  The state to persist
+     * @param  string|null  $context  Optional context for isolation
      */
     public function saveState(string $key, array $state, ?string $context = null): void;
 
     /**
-     * Récupère l'état complet d'une structure avec contexte
+     * Retrieves a previously persisted state.
      *
-     * @param  string  $key  Clé d'identification
-     * @param  string|null  $context  Contexte (optionnel)
-     * @return array|null État récupéré ou null si inexistant
+     * @param  string  $key  The storage key
+     * @param  string|null  $context  Optional context for isolation
+     * @return array<string, mixed>|null The retrieved state or null
      */
     public function loadState(string $key, ?string $context = null): ?array;
 
     /**
-     * Définit la durée de vie globale des données
+     * Sets the global Time-To-Live for all stored data.
      *
-     * @param  int  $seconds  Durée de vie en secondes (0 = pas d'expiration)
+     * @param  int  $seconds  TTL in seconds (0 means no expiration)
      */
     public function setTTL(int $seconds): void;
 
     /**
-     * Récupère la durée de vie globale des données
-     *
-     * @return int Durée de vie en secondes
+     * Returns the current global TTL.
      */
     public function getTTL(): int;
 
     /**
-     * Nettoie les entrées expirées
+     * Removes all expired entries from the storage.
      *
-     * @return int Nombre d'entrées supprimées
+     * @return int Number of removed entries
      */
     public function cleanExpired(): int;
 
     /**
-     * Récupère les statistiques du storage
-     *
-     * @return JsonlStorageStatsRecord Statistiques
+     * Returns storage statistics.
      */
     public function getStats(): JsonlStorageStatsRecord;
 
     /**
-     * Récupère le service JSONL sous-jacent
-     *
-     * @return JsonlService Service JSONL
+     * Returns the underlying JSONL service instance.
      */
     public function getJsonlService(): JsonlService;
 }

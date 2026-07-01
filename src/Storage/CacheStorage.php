@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AndyDefer\StorageKit\Storage;
 
 use AndyDefer\StorageKit\Contracts\Storage\CacheStorageInterface;
@@ -11,12 +13,25 @@ use Phpfastcache\Config\ConfigurationOption;
 use Phpfastcache\Core\Pool\ExtendedCacheItemPoolInterface;
 use Phpfastcache\Entities\DriverStatistic;
 
-class CacheStorage implements CacheStorageInterface
+/**
+ * Cache storage implementation using PhpFastCache.
+ *
+ * Supports multiple backends (Files, Sqlite) with TTL and statistics.
+ *
+ * @example
+ * $storage = new CacheStorage(CacheDriver::FILES);
+ * $storage->setWithTTL('user', ['name' => 'John'], 3600);
+ * $user = $storage->get('user');
+ */
+final class CacheStorage implements CacheStorageInterface
 {
     private ExtendedCacheItemPoolInterface $cache;
 
     private CacheDriver $driver;
 
+    private string $cacheKeyPrefix;
+
+    /** @var array<string, int> */
     private array $stats = [
         'hits' => 0,
         'misses' => 0,
@@ -24,36 +39,40 @@ class CacheStorage implements CacheStorageInterface
         'deletes' => 0,
     ];
 
-    private string $cacheKeyPrefix;
-
     public function __construct(
         CacheDriver $driver = CacheDriver::FILES,
         ?CacheConfigRecord $config = null,
-        string $cacheKeyPrefix = 'algokit_',
+        string $cacheKeyPrefix = 'storage_',
     ) {
         $this->driver = $driver;
         $this->cacheKeyPrefix = $cacheKeyPrefix;
 
-        $configArray = $this->buildConfig($driver, $config);
-        $this->cache = CacheManager::getInstance($driver->value, new ConfigurationOption($configArray));
+        $configArray = $this->buildConfiguration($driver, $config);
+        $this->cache = CacheManager::getInstance(
+            $driver->value,
+            new ConfigurationOption($configArray)
+        );
     }
 
-    private function buildConfig(CacheDriver $driver, ?CacheConfigRecord $config): array
+    /**
+     * Builds the configuration array for the PhpFastCache driver.
+     *
+     * @return array<string, mixed>
+     */
+    private function buildConfiguration(CacheDriver $driver, ?CacheConfigRecord $config): array
     {
-        if ($config !== null) {
-            return array_filter([
-                'path' => $config->path,
-            ], fn ($v) => $v !== null);
+        if ($config !== null && $config->path !== null) {
+            return ['path' => $config->path];
         }
 
         return $driver === CacheDriver::FILES
-            ? ['path' => sys_get_temp_dir().'/algokit_cache']
-            : ['path' => sys_get_temp_dir().'/algokit_cache.sqlite'];
+            ? ['path' => sys_get_temp_dir().'/storage_cache']
+            : ['path' => sys_get_temp_dir().'/storage_cache.sqlite'];
     }
 
     public function get(string $key, mixed $default = null): mixed
     {
-        $cacheKey = $this->getCacheKey($key);
+        $cacheKey = $this->buildCacheKey($key);
         $item = $this->cache->getItem($cacheKey);
 
         if ($item->isHit() && ! $item->isExpired()) {
@@ -84,7 +103,7 @@ class CacheStorage implements CacheStorageInterface
 
     public function set(string $key, mixed $value): void
     {
-        $cacheKey = $this->getCacheKey($key);
+        $cacheKey = $this->buildCacheKey($key);
         $item = $this->cache->getItem($cacheKey);
         $item->set($value);
         $this->cache->save($item);
@@ -100,7 +119,7 @@ class CacheStorage implements CacheStorageInterface
 
     public function setWithTTL(string $key, mixed $value, int $ttl): void
     {
-        $cacheKey = $this->getCacheKey($key);
+        $cacheKey = $this->buildCacheKey($key);
         $item = $this->cache->getItem($cacheKey);
         $item->set($value)->expiresAfter($ttl);
         $this->cache->save($item);
@@ -109,7 +128,7 @@ class CacheStorage implements CacheStorageInterface
 
     public function delete(string $key): bool
     {
-        $cacheKey = $this->getCacheKey($key);
+        $cacheKey = $this->buildCacheKey($key);
         $result = $this->cache->deleteItem($cacheKey);
 
         if ($result) {
@@ -128,7 +147,7 @@ class CacheStorage implements CacheStorageInterface
 
     public function exists(string $key): bool
     {
-        $cacheKey = $this->getCacheKey($key);
+        $cacheKey = $this->buildCacheKey($key);
         $item = $this->cache->getItem($cacheKey);
 
         if ($item->isHit() && $item->isExpired()) {
@@ -138,6 +157,17 @@ class CacheStorage implements CacheStorageInterface
         }
 
         return $item->isHit();
+    }
+
+    public function setTTL(string $key, int $seconds): void
+    {
+        $cacheKey = $this->buildCacheKey($key);
+        $item = $this->cache->getItem($cacheKey);
+
+        if ($item->isHit()) {
+            $item->expiresAfter($seconds);
+            $this->cache->save($item);
+        }
     }
 
     public function clear(): void
@@ -156,8 +186,8 @@ class CacheStorage implements CacheStorageInterface
                 $driverStats = $this->cache->getStats();
                 $itemsCount = $driverStats->getCount() ?? 0;
             }
-        } catch (\Exception $e) {
-            // Ignorer l'erreur
+        } catch (\Throwable) {
+            // Driver does not support statistics
         }
 
         return new CacheStorageStatsRecord(
@@ -180,17 +210,6 @@ class CacheStorage implements CacheStorageInterface
         return $this->driver->value;
     }
 
-    public function setTTL(string $key, int $seconds): void
-    {
-        $cacheKey = $this->getCacheKey($key);
-        $item = $this->cache->getItem($cacheKey);
-
-        if ($item->isHit()) {
-            $item->expiresAfter($seconds);
-            $this->cache->save($item);
-        }
-    }
-
     public function getCacheKeyPrefix(): string
     {
         return $this->cacheKeyPrefix;
@@ -201,7 +220,10 @@ class CacheStorage implements CacheStorageInterface
         $this->cacheKeyPrefix = $prefix;
     }
 
-    private function getCacheKey(string $key): string
+    /**
+     * Builds the internal cache key with the configured prefix.
+     */
+    private function buildCacheKey(string $key): string
     {
         return $this->cacheKeyPrefix.$key;
     }

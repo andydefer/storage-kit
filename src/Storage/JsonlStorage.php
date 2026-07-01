@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AndyDefer\StorageKit\Storage;
 
 use AndyDefer\PhpJsonl\Contexts\JsonlContext;
@@ -12,7 +14,17 @@ use AndyDefer\PhpVo\ValueObjects\DateTimeVO;
 use AndyDefer\StorageKit\Contracts\Storage\JsonlStorageInterface;
 use AndyDefer\StorageKit\Records\JsonlStorageStatsRecord;
 
-class JsonlStorage implements JsonlStorageInterface
+/**
+ * Persistent storage implementation using JSON Lines (JSONL) format.
+ *
+ * Each key is stored as a separate JSONL file with support for TTL and context.
+ *
+ * @example
+ * $storage = new JsonlStorage('/var/data/storage', 3600);
+ * $storage->set('user', ['name' => 'John']);
+ * $user = $storage->get('user');
+ */
+final class JsonlStorage implements JsonlStorageInterface
 {
     private JsonlService $service;
 
@@ -20,6 +32,7 @@ class JsonlStorage implements JsonlStorageInterface
 
     private int $ttl;
 
+    /** @var array<string, string> */
     private array $filePathCache = [];
 
     public function __construct(
@@ -42,7 +55,12 @@ class JsonlStorage implements JsonlStorageInterface
         );
     }
 
-    private function getFilePath(string $key): string
+    /**
+     * Resolves the file path for a given key.
+     *
+     * Uses caching to avoid repeated path resolution.
+     */
+    private function resolveFilePath(string $key): string
     {
         if (! isset($this->filePathCache[$key])) {
             $record = new CacheJsonlRecord(
@@ -56,9 +74,19 @@ class JsonlStorage implements JsonlStorageInterface
         return $this->filePathCache[$key];
     }
 
+    /**
+     * Sanitizes a key for use as a filename.
+     *
+     * Replaces special characters with underscores.
+     */
+    private function sanitizeKey(string $key): string
+    {
+        return preg_replace('/[^a-zA-Z0-9_\-]/', '_', $key);
+    }
+
     public function get(string $key, mixed $default = null): mixed
     {
-        $filePath = $this->getFilePath($key);
+        $filePath = $this->resolveFilePath($key);
 
         if (! $this->service->fileExists($filePath)) {
             return $default;
@@ -120,7 +148,7 @@ class JsonlStorage implements JsonlStorageInterface
 
     public function delete(string $key): bool
     {
-        $filePath = $this->getFilePath($key);
+        $filePath = $this->resolveFilePath($key);
 
         if (! $this->service->fileExists($filePath)) {
             return false;
@@ -140,13 +168,14 @@ class JsonlStorage implements JsonlStorageInterface
 
     public function exists(string $key): bool
     {
-        $filePath = $this->getFilePath($key);
+        $filePath = $this->resolveFilePath($key);
 
         if (! $this->service->fileExists($filePath)) {
             return false;
         }
 
         $data = $this->service->getFirstLine($filePath);
+
         if ($data === null) {
             return false;
         }
@@ -163,13 +192,17 @@ class JsonlStorage implements JsonlStorageInterface
         $this->filePathCache = [];
     }
 
-    private function clearDirectory(FileSystemInterface $fs, string $dir): void
+    /**
+     * Recursively removes all JSONL files from a directory.
+     */
+    private function clearDirectory(FileSystemInterface $fs, string $directory): void
     {
-        if (! is_dir($dir)) {
+        if (! is_dir($directory)) {
             return;
         }
 
-        $items = scandir($dir);
+        $items = scandir($directory);
+
         if ($items === false) {
             return;
         }
@@ -179,7 +212,7 @@ class JsonlStorage implements JsonlStorageInterface
                 continue;
             }
 
-            $path = $dir.DIRECTORY_SEPARATOR.$item;
+            $path = $directory.DIRECTORY_SEPARATOR.$item;
 
             if (is_dir($path)) {
                 $this->clearDirectory($fs, $path);
@@ -203,6 +236,7 @@ class JsonlStorage implements JsonlStorageInterface
 
             foreach ($lines as $line) {
                 $isExpired = false;
+
                 if (isset($line['expires_at']) && $line['expires_at'] !== null) {
                     $expiresAt = new \DateTime($line['expires_at']);
                     if ($expiresAt < new \DateTime) {
@@ -233,15 +267,21 @@ class JsonlStorage implements JsonlStorageInterface
         return $deletedCount;
     }
 
-    private function findAllJsonlFiles(string $dir): array
+    /**
+     * Recursively finds all JSONL files in a directory.
+     *
+     * @return string[]
+     */
+    private function findAllJsonlFiles(string $directory): array
     {
         $files = [];
 
-        if (! is_dir($dir)) {
+        if (! is_dir($directory)) {
             return $files;
         }
 
-        $items = scandir($dir);
+        $items = scandir($directory);
+
         if ($items === false) {
             return $files;
         }
@@ -251,7 +291,7 @@ class JsonlStorage implements JsonlStorageInterface
                 continue;
             }
 
-            $path = $dir.DIRECTORY_SEPARATOR.$item;
+            $path = $directory.DIRECTORY_SEPARATOR.$item;
 
             if (is_dir($path)) {
                 $files = array_merge($files, $this->findAllJsonlFiles($path));
@@ -274,11 +314,6 @@ class JsonlStorage implements JsonlStorageInterface
         $storageKey = $context !== null ? $key.'_'.$context : $key;
 
         return $this->get($storageKey);
-    }
-
-    private function sanitizeKey(string $key): string
-    {
-        return preg_replace('/[^a-zA-Z0-9_\-]/', '_', $key);
     }
 
     public function setTTL(int $seconds): void

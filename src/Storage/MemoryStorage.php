@@ -1,11 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AndyDefer\StorageKit\Storage;
 
 use AndyDefer\StorageKit\Contracts\Storage\StorageInterface;
 
-class MemoryStorage implements StorageInterface
+/**
+ * In-memory storage implementation using a PHP array.
+ *
+ * Data is stored in RAM and is lost when the script ends.
+ * Ideal for testing, development, and short-lived data.
+ *
+ * @example
+ * $storage = new MemoryStorage();
+ * $storage->set('user', ['name' => 'John']);
+ * $user = $storage->get('user');
+ */
+final class MemoryStorage implements StorageInterface
 {
+    /** @var array<string, mixed> */
     private array $data = [];
 
     public function get(string $key, mixed $default = null): mixed
@@ -37,13 +51,13 @@ class MemoryStorage implements StorageInterface
 
     public function delete(string $key): bool
     {
-        if (array_key_exists($key, $this->data)) {
-            unset($this->data[$key]);
-
-            return true;
+        if (! array_key_exists($key, $this->data)) {
+            return false;
         }
 
-        return false;
+        unset($this->data[$key]);
+
+        return true;
     }
 
     public function deleteMultiple(array $keys): void

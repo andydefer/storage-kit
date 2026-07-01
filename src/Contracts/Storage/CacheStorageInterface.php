@@ -1,69 +1,67 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AndyDefer\StorageKit\Contracts\Storage;
 
 use AndyDefer\StorageKit\Records\CacheStorageStatsRecord;
 use Phpfastcache\Core\Pool\ExtendedCacheItemPoolInterface;
 
 /**
- * Interface pour CacheStorage avec support TTL et statistiques
+ * Extended storage interface for cache-based implementations.
+ *
+ * Provides TTL (Time-To-Live) support and cache statistics.
  */
 interface CacheStorageInterface extends StorageInterface
 {
     /**
-     * Stocke une valeur avec une durée de vie (TTL)
+     * Stores a value with a specific Time-To-Live.
      *
-     * @param  string  $key  Clé d'identification
-     * @param  mixed  $value  Valeur à stocker
-     * @param  int  $ttl  Durée de vie en secondes
+     * @param  string  $key  The storage key
+     * @param  mixed  $value  The value to store
+     * @param  int  $ttl  Time-To-Live in seconds
      */
     public function setWithTTL(string $key, mixed $value, int $ttl): void;
 
     /**
-     * Modifie la durée de vie d'une clé existante
+     * Updates the Time-To-Live of an existing key.
      *
-     * @param  string  $key  Clé d'identification
-     * @param  int  $seconds  Nouvelle durée de vie en secondes
+     * @param  string  $key  The storage key
+     * @param  int  $seconds  New Time-To-Live in seconds
      */
     public function setTTL(string $key, int $seconds): void;
 
     /**
-     * Récupère les statistiques du cache
-     *
-     * @return CacheStorageStatsRecord Statistiques
+     * Returns cache usage statistics.
      */
     public function getStats(): CacheStorageStatsRecord;
 
     /**
-     * Récupère l'instance du driver PhpFastCache sous-jacent
-     *
-     * @return ExtendedCacheItemPoolInterface Driver PhpFastCache
+     * Returns the underlying PhpFastCache driver instance.
      */
     public function getDriver(): ExtendedCacheItemPoolInterface;
 
     /**
-     * Récupère le nom du driver utilisé
+     * Returns the name of the underlying driver.
      *
-     * @return string Nom du driver (Files, Sqlite, etc.)
+     * @return string Driver name (e.g., 'Files', 'Sqlite')
      */
     public function getDriverName(): string;
 
     /**
-     * Récupère le préfixe des clés
-     *
-     * @return string Préfixe des clés
+     * Returns the current key prefix.
      */
     public function getCacheKeyPrefix(): string;
 
     /**
-     * Définit le préfixe des clés
+     * Sets the key prefix for all operations.
      *
-     * @param  string  $prefix  Nouveau préfixe
+     * @param  string  $prefix  The new prefix
      */
     public function setCacheKeyPrefix(string $prefix): void;
 
     /**
-     * Vider tout le cache
+     * Removes all cached data.
      */
     public function clear(): void;
 }
