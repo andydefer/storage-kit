@@ -1,4 +1,4 @@
-# StorageKit - Documentation complète
+# Storage Kit - Documentation complète
 
 [![PHP Version](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://php.net)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)

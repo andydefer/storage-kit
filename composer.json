@@ -1,5 +1,5 @@
 {
-    "name": "andydefer/storagekit",
+    "name": "andydefer/storage-kit",
     "description": "Storage adapters : Memory, JSONL, and Cache",
     "type": "library",
     "license": "MIT",
