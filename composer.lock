@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6f051a86eaafab841c41651a4739ebad",
+    "content-hash": "9dbb5794c700aa561f9b2d0bc7cc8d0c",
     "packages": [
         {
             "name": "andydefer/domain-structures",
@@ -59,20 +59,20 @@
         },
         {
             "name": "andydefer/php-jsonl",
-            "version": "v0.9.1",
+            "version": "v0.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/andydefer/php-jsonl.git",
-                "reference": "dd91f1c822951e79eb5b05d1b24b3a4915533cf1"
+                "reference": "e7c02b92e00478a488cb55834502c9b8cc1b35a5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/andydefer/php-jsonl/zipball/dd91f1c822951e79eb5b05d1b24b3a4915533cf1",
-                "reference": "dd91f1c822951e79eb5b05d1b24b3a4915533cf1",
+                "url": "https://api.github.com/repos/andydefer/php-jsonl/zipball/e7c02b92e00478a488cb55834502c9b8cc1b35a5",
+                "reference": "e7c02b92e00478a488cb55834502c9b8cc1b35a5",
                 "shasum": ""
             },
             "require": {
-                "andydefer/php-services": "^1.4",
+                "andydefer/php-services": "^1.5",
                 "php": "^8.2"
             },
             "require-dev": {
@@ -104,13 +104,13 @@
             "description": "High-performance JSONL (JSON Lines) file management library with temporal and key-based storage strategies, automatic batching, and cache expiration",
             "support": {
                 "issues": "https://github.com/andydefer/php-jsonl/issues",
-                "source": "https://github.com/andydefer/php-jsonl/tree/v0.9.1"
+                "source": "https://github.com/andydefer/php-jsonl/tree/v0.10.0"
             },
-            "time": "2026-07-09T14:56:53+00:00"
+            "time": "2026-07-09T15:18:43+00:00"
         },
         {
             "name": "andydefer/php-services",
-            "version": "v1.4.1",
+            "version": "v1.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/andydefer/php-services.git",
@@ -154,7 +154,7 @@
             "description": "Collection of reusable services for PHP and Laravel applications including model transformation, caching, and common business logic",
             "support": {
                 "issues": "https://github.com/andydefer/php-services/issues",
-                "source": "https://github.com/andydefer/php-services/tree/v1.4.1"
+                "source": "https://github.com/andydefer/php-services/tree/v1.5.0"
             },
             "time": "2026-07-09T14:54:30+00:00"
         },
